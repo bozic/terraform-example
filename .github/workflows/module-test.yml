@@ -16,7 +16,8 @@ jobs:
   test-module:
     name: "[${{ matrix.module_name }}] Test"
     runs-on: ubuntu-latest
-    environment: ${{ github.ref == 'refs/heads/main' && 'release' || 'snapshot' }}
+    # Restore release environment selection once it is provisioned with Azure test credentials.
+    environment: snapshot
     strategy:
       fail-fast: false
       matrix:
