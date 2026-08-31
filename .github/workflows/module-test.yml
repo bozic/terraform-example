@@ -1,0 +1,79 @@
+name: Test Terraform Modules
+
+on:
+  workflow_call:
+    inputs:
+      modules:
+        description: "JSON array of modules to test"
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test-module:
+    name: "[${{ matrix.module_name }}] Test"
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'release' || 'snapshot' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(inputs.modules) }}
+    env:
+      TF_VAR_subscription_id: ${{ vars.SUBSCRIPTION_ID }}
+      TF_VAR_client_id: ${{ vars.CLIENT_ID }}
+      TF_VAR_client_secret: ""
+      TF_VAR_tenant_id: ${{ vars.TENANT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Process override template if exists
+        working-directory: ${{ matrix.module }}
+        run: |
+          override_dir=$(dirname "$(find . -name override.template 2>/dev/null | head -1)" 2>/dev/null)
+          if [ -d "$override_dir" ] && [ -f "$override_dir/override.template" ]; then
+            echo "Processing override template in $override_dir"
+            envsubst < "$override_dir/override.template" > "$override_dir/override.tf"
+            rm "$override_dir/override.template"
+          fi
+
+      - name: Read module version
+        id: version
+        working-directory: ${{ matrix.module }}
+        run: |
+          VERSION=$(cat VERSION)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Module version: $VERSION"
+
+      - name: Run Terraform tests
+        working-directory: ${{ matrix.module }}
+        run: |
+          test_count=0
+          fail_count=0
+          for dir in examples/*/; do
+            if [ -d "$dir/tests" ]; then
+              echo "::group::Testing $dir"
+              terraform -chdir="$dir" init
+              if terraform -chdir="$dir" test; then
+                echo "✓ $dir passed"
+              else
+                echo "✗ $dir failed"
+                fail_count=$((fail_count+1))
+              fi
+              test_count=$((test_count+1))
+              echo "::endgroup::"
+            fi
+          done
+          echo "Ran $test_count test suite(s), $fail_count failure(s)"
+          if [ "$fail_count" -gt 0 ]; then exit 1; fi
+
+      - name: Post test summary
+        if: always()
+        run: |
+          echo "### [${{ matrix.module_name }}] v${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Module: \`${{ matrix.module }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Result: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"

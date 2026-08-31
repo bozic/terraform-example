@@ -1,0 +1,176 @@
+name: Terraform Module CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      buildAll:
+        description: "Build all modules regardless of changes"
+        required: true
+        default: false
+        type: boolean
+
+  push:
+    paths:
+      - "azure/terraform-module**"
+      - "aws/terraform-module**"
+      - ".github/workflows/*"
+    branches:
+      - main
+      - feature/*
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "azure/terraform-module**"
+      - "aws/terraform-module**"
+      - ".github/workflows/*"
+
+permissions:
+  id-token: write
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: "config"
+          hide-progress: true
+
+      - name: Run Checkov vulnerability scanner
+        uses: bridgecrewio/checkov-action@v12.1347.0
+
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: Init TFLint plugins
+        run: tflint --init
+
+      - name: Run TFLint
+        run: tflint --recursive
+
+  generate-matrix:
+    name: Detect Changed Modules
+    runs-on: ubuntu-latest
+    needs: [security-scan, lint]
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has_changes: ${{ steps.set-matrix.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine changed files
+        id: diff
+        run: |
+          if [ "${{ inputs.buildAll }}" == "true" ]; then
+            export DIFF=$(ls -d */terraform-module-*/ 2>/dev/null | sed 's|/$||')
+          elif [ "$GITHUB_BASE_REF" ]; then
+            git fetch origin "$GITHUB_BASE_REF" --depth=1
+            export DIFF=$(git diff --diff-filter=d --name-only "origin/$GITHUB_BASE_REF" "$GITHUB_SHA")
+          elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            git fetch origin main --depth=1
+            export DIFF=$(git diff --diff-filter=d --name-only origin/main "$GITHUB_SHA")
+          else
+            git fetch origin "${{ github.event.before }}" --depth=1
+            export DIFF=$(git diff --diff-filter=d --name-only "${{ github.event.before }}" "$GITHUB_SHA")
+          fi
+          echo "diff=$(echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g')" >> "$GITHUB_OUTPUT"
+
+      - name: Build matrix by level
+        id: set-matrix
+        run: |
+          DIFF_DECODED=$(echo "${{ steps.diff.outputs.diff }}" | sed "s/%0A/\n/g")
+          declare -A LEVELS
+          for path in $DIFF_DECODED; do
+            if [[ "$path" =~ ^[a-z]+/terraform-module-[^/]+(/|$) ]]; then
+              module_dir=$(echo "$path" | grep -oE '^[a-z]+/terraform-module-[^/]+')
+              if [ -f "$module_dir/LEVEL" ]; then
+                level=$(cat "$module_dir/LEVEL")
+                if [[ ! " ${LEVELS[$level]} " =~ " $module_dir " ]]; then
+                  LEVELS[$level]="${LEVELS[$level]} $module_dir"
+                fi
+              fi
+            fi
+          done
+
+          JSON='{"levels":['
+          total=0
+          for level in $(printf "%s\n" "${!LEVELS[@]}" | sort -n); do
+            modules_json=""
+            for module in ${LEVELS[$level]}; do
+              module_name=$(echo "$module" | sed 's|[a-z]*/terraform-module-||')
+              modules_json="$modules_json{\"module\":\"$module\",\"module_name\":\"$module_name\"},"
+              total=$((total+1))
+            done
+            modules_json=${modules_json%,}
+            JSON="$JSON{\"level\":$level,\"modules\":[${modules_json}]},"
+          done
+          JSON=${JSON%,}
+          JSON="$JSON]}"
+
+          if [ "$total" -eq 0 ]; then
+            echo "matrix={\"levels\":[]}" >> "$GITHUB_OUTPUT"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  test:
+    name: "Test level ${{ matrix.levels.level }}"
+    needs: generate-matrix
+    if: needs.generate-matrix.outputs.has_changes == 'true'
+    strategy:
+      matrix:
+        levels: ${{ fromJson(needs.generate-matrix.outputs.matrix).levels }}
+      fail-fast: true
+      max-parallel: 1
+    uses: ./.github/workflows/module-test.yml
+    with:
+      modules: ${{ toJson(matrix.levels.modules) }}
+    secrets: inherit
+
+  approval-gate:
+    name: Review Gate
+    needs: test
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    environment: review
+    steps:
+      - name: Approval confirmed
+        run: echo "All module tests passed and PR has been approved."
+
+  summary:
+    name: CI Summary
+    needs: [security-scan, lint, generate-matrix, test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report status
+        run: |
+          echo "## CI Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Security scan: ${{ needs.security-scan.result }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Lint: ${{ needs.lint.result }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Changed modules detected: ${{ needs.generate-matrix.outputs.has_changes }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Test: ${{ needs.test.result }}" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,6 @@
+compact: false
+output: cli
+skip-path:
+  - examples
+framework:
+  - terraform

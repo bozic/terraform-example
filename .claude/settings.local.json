@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs -0 -I {} sh -c 'echo -n \"$\\(dirname {}\\): \"; cat {}')",
+      "Bash(xargs ls -la)",
+      "WebFetch(domain:developer.hashicorp.com)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:support.hashicorp.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(terraform fmt *)",
+      "Bash(where terraform *)",
+      "Bash(git *)"
+    ]
+  }
+}
