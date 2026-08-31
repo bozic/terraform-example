@@ -37,6 +37,7 @@ The `tf-docs/` folder at the repo root contains one Markdown file per provider r
 
 - Follow the official Terraform style guide: https://developer.hashicorp.com/terraform/language/style
 - Use `terraform fmt` formatting
+- Pin Terraform to version `1.16.0` in every `terraform` block: `required_version = "= 1.16.0"`
 - Pin provider versions in every module's `terraform.tf` (e.g. `~> 4.24.0` for azurerm)
 - Use the create-or-query pattern: a `var.*_create` boolean with `count` on both `resource` and `data` blocks
 - Mark sensitive outputs explicitly with `sensitive = true`
@@ -65,6 +66,7 @@ The `tf-docs/` folder at the repo root contains one Markdown file per provider r
 ## Testing
 
 - Use Terraform Test Framework (`.tftest.hcl` files)
+- Run `tflint` before committing Terraform changes
 - Place tests in `examples/{use-case}/tests/`
 - Include provider block with OIDC fallback in test files (`use_oidc = var.client_secret == ""`)
 - Assert on resource attributes after `apply`
