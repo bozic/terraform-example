@@ -37,6 +37,7 @@ The `tf-docs/` folder at the repo root contains one Markdown file per provider r
 
 - Follow the official Terraform style guide: https://developer.hashicorp.com/terraform/language/style
 - Use `terraform fmt` formatting
+- Pin Terraform to version `1.16.0` in every `terraform` block: `required_version = "= 1.16.0"`
 - Pin provider versions in every module's `terraform.tf` (e.g. `~> 4.24.0` for azurerm)
 - Use the create-or-query pattern: a `var.*_create` boolean with `count` on both `resource` and `data` blocks
 - Mark sensitive outputs explicitly with `sensitive = true`
@@ -65,8 +66,12 @@ The `tf-docs/` folder at the repo root contains one Markdown file per provider r
 ## Testing
 
 - Use Terraform Test Framework (`.tftest.hcl` files)
+- Run `tflint` before committing Terraform changes
 - Place tests in `examples/{use-case}/tests/`
-- Include provider block with OIDC fallback in test files (`use_oidc = var.client_secret == ""`)
+- Configure the `azurerm` provider in example roots and `.tftest.hcl` files with `features {}` only; it reads authentication from the `ARM_*` environment variables supplied by CI.
+- Never declare Terraform variables solely to pass Azure credentials to tests, and never reference credential variables in `.tftest.hcl` files. Do not use `TF_VAR_*` for provider credentials because Terraform parses their values as HCL expressions.
+- In GitHub Actions, map the `snapshot` environment values to `ARM_SUBSCRIPTION_ID`, `ARM_CLIENT_ID`, and `ARM_TENANT_ID`, and map the `AZURE_CLIENT_SECRET` secret to `ARM_CLIENT_SECRET`.
+- Do not generate `override.tf` from a module's `override.template` while running example tests. The module is a child module during those tests, so any backend block it declares is ignored.
 - Assert on resource attributes after `apply`
 - Test file naming: `{module-name}-{use-case}.tftest.hcl`
 - At least two tests per module are required; additional tests per use-case. Mandatory use cases are public and private (if applicable). Optional use cases are for additional features or configurations (deploy additional resources as part of the test, do not reuse other modules in test). For naming, always generate radnomized resource names in tests to avoid collisions. Use `random_pet` or `random_string` resources for this purpose.

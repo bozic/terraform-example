@@ -22,24 +22,14 @@ jobs:
       matrix:
         include: ${{ fromJson(inputs.modules) }}
     env:
-      TF_VAR_subscription_id: ${{ vars.SUBSCRIPTION_ID }}
-      TF_VAR_client_id: ${{ vars.CLIENT_ID }}
-      TF_VAR_client_secret: ""
-      TF_VAR_tenant_id: ${{ vars.TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: hashicorp/setup-terraform@v3
-
-      - name: Process override template if exists
-        working-directory: ${{ matrix.module }}
-        run: |
-          override_dir=$(dirname "$(find . -name override.template 2>/dev/null | head -1)" 2>/dev/null)
-          if [ -d "$override_dir" ] && [ -f "$override_dir/override.template" ]; then
-            echo "Processing override template in $override_dir"
-            envsubst < "$override_dir/override.template" > "$override_dir/override.tf"
-            rm "$override_dir/override.template"
-          fi
 
       - name: Read module version
         id: version
