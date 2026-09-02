@@ -51,9 +51,11 @@ variable "tags" {
 variable "subnets" {
   description = "Standalone subnets to create, keyed by subnet name. Each subnet can use a different NSG and route table."
   type = map(object({
-    address_prefixes          = list(string)
-    network_security_group_id = optional(string)
-    route_table_id            = optional(string)
+    address_prefixes                          = list(string)
+    network_security_group_id                 = optional(string)
+    network_security_group_association_create = optional(bool, false)
+    route_table_id                            = optional(string)
+    route_table_association_create            = optional(bool, false)
   }))
   default = {}
 

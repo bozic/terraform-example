@@ -16,9 +16,11 @@ module "virtual_network" {
 
   subnets = {
     frontend = {
-      address_prefixes          = ["10.0.1.0/24"]
-      network_security_group_id = azurerm_network_security_group.frontend.id
-      route_table_id            = azurerm_route_table.frontend.id
+      address_prefixes                          = ["10.0.1.0/24"]
+      network_security_group_id                 = azurerm_network_security_group.frontend.id
+      network_security_group_association_create = true
+      route_table_id                            = azurerm_route_table.frontend.id
+      route_table_association_create            = true
     }
     backend = {
       address_prefixes = ["10.0.2.0/24"]
@@ -26,6 +28,11 @@ module "virtual_network" {
   }
 }
 ```
+
+Set `network_security_group_association_create` or
+`route_table_association_create` to `true` on a subnet to create its
+corresponding association. The explicit flags keep resource instance keys
+known when association IDs come from resources created in the same plan.
 
 ## Query an Existing Virtual Network
 

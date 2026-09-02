@@ -13,3 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Create-or-query support for virtual networks.
 - Optional standalone subnet creation.
 - Per-subnet Network Security Group and route table associations.
+
+### Fixed
+
+- Use explicit association creation flags so IDs computed during apply do not
+  make Terraform `for_each` instance keys unknown.

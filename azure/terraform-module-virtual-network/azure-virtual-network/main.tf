@@ -41,19 +41,33 @@ resource "azurerm_subnet" "this" {
 resource "azurerm_subnet_network_security_group_association" "this" {
   for_each = {
     for name, subnet in var.subnets : name => subnet
-    if subnet.network_security_group_id != null
+    if subnet.network_security_group_association_create
   }
 
   subnet_id                 = azurerm_subnet.this[each.key].id
   network_security_group_id = each.value.network_security_group_id
+
+  lifecycle {
+    precondition {
+      condition     = each.value.network_security_group_id != null
+      error_message = "network_security_group_id must be set when network_security_group_association_create is true."
+    }
+  }
 }
 
 resource "azurerm_subnet_route_table_association" "this" {
   for_each = {
     for name, subnet in var.subnets : name => subnet
-    if subnet.route_table_id != null
+    if subnet.route_table_association_create
   }
 
   subnet_id      = azurerm_subnet.this[each.key].id
   route_table_id = each.value.route_table_id
+
+  lifecycle {
+    precondition {
+      condition     = each.value.route_table_id != null
+      error_message = "route_table_id must be set when route_table_association_create is true."
+    }
+  }
 }
