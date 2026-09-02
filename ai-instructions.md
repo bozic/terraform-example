@@ -43,6 +43,8 @@ The `tf-docs/` folder at the repo root contains one Markdown file per provider r
 - Mark sensitive outputs explicitly with `sensitive = true`
 - Use `dynamic` blocks for optional nested configuration
 - Use `locals` for computed values and conditional logic
+- Check every resource's mandatory parameters and expose them as mandatory module input variables.
+- Check parameter dependencies. When setting one parameter requires other parameters, enforce that relationship with module variable `validation` blocks.
 
 ## Variable Naming
 
