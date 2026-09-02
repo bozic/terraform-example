@@ -47,7 +47,9 @@ variable "subnets" {
   type = map(object({
     address_prefixes                              = list(string)
     network_security_group_id                     = optional(string)
+    network_security_group_association_enabled    = optional(bool, false)
     route_table_id                                = optional(string)
+    route_table_association_enabled               = optional(bool, false)
     default_outbound_access_enabled               = optional(bool, true)
     private_endpoint_network_policies             = optional(string, "Disabled")
     private_link_service_network_policies_enabled = optional(bool, true)
@@ -55,6 +57,22 @@ variable "subnets" {
     service_endpoint_policy_ids                   = optional(list(string))
   }))
   default = {}
+
+  validation {
+    condition = alltrue([
+      for subnet in values(var.subnets) :
+      !subnet.network_security_group_association_enabled || subnet.network_security_group_id != null
+    ])
+    error_message = "network_security_group_id must be provided when network_security_group_association_enabled is true."
+  }
+
+  validation {
+    condition = alltrue([
+      for subnet in values(var.subnets) :
+      !subnet.route_table_association_enabled || subnet.route_table_id != null
+    ])
+    error_message = "route_table_id must be provided when route_table_association_enabled is true."
+  }
 }
 
 variable "tags" {

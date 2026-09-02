@@ -17,14 +17,18 @@ module "virtual_network" {
 
   subnets = {
     application = {
-      address_prefixes          = ["10.0.1.0/24"]
-      network_security_group_id = azurerm_network_security_group.application.id
-      route_table_id            = azurerm_route_table.application.id
+      address_prefixes                           = ["10.0.1.0/24"]
+      network_security_group_id                  = azurerm_network_security_group.application.id
+      network_security_group_association_enabled = true
+      route_table_id                             = azurerm_route_table.application.id
+      route_table_association_enabled            = true
     }
     data = {
-      address_prefixes          = ["10.0.2.0/24"]
-      network_security_group_id = azurerm_network_security_group.data.id
-      route_table_id            = azurerm_route_table.data.id
+      address_prefixes                           = ["10.0.2.0/24"]
+      network_security_group_id                  = azurerm_network_security_group.data.id
+      network_security_group_association_enabled = true
+      route_table_id                             = azurerm_route_table.data.id
+      route_table_association_enabled            = true
     }
   }
 }
