@@ -4,3 +4,5 @@ scan:
     - "**/examples/**"
 vulnerability:
   ignore-unfixed: true
+severity:
+  - CRITICAL

@@ -83,7 +83,7 @@ The `tf-docs/` folder at the repo root contains one Markdown file per provider r
 - Never include credentials or secrets in Terraform files
 - Use `override.template` with `$VAR_NAME` placeholders for environment-specific values
 - Security scanners (Trivy, Checkov) run in CI — ensure modules pass both
-- **Trivy** (`trivy.yaml`): Config scanning, skips `examples/`, fails on fixable vulnerabilities
+- **Trivy** (`trivy.yaml`): Config scanning, skips `examples/`, fails on fixable vulnerabilities. Fix only critical issues that are found by Trivy
 - **Checkov** (`.checkov.yml`): Terraform framework, skips `examples/`
 
 ## CI/CD Pipeline
