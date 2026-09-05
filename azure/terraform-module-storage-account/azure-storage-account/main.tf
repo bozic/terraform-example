@@ -1,21 +1,39 @@
 resource "azurerm_storage_account" "this" {
   count = var.storage_account_create ? 1 : 0
 
-  name                            = var.storage_account_name
-  resource_group_name             = var.resource_group_name
-  location                        = var.location
-  account_kind                    = var.account_kind
-  account_tier                    = var.account_tier
-  account_replication_type        = var.account_replication_type
-  access_tier                     = var.access_tier
-  https_traffic_only_enabled      = var.https_traffic_only_enabled
-  min_tls_version                 = var.min_tls_version
-  allow_nested_items_to_be_public = var.allow_nested_items_to_be_public
-  shared_access_key_enabled       = var.shared_access_key_enabled
-  public_network_access_enabled   = var.public_network_access_enabled
-  default_to_oauth_authentication = var.default_to_oauth_authentication
-  is_hns_enabled                  = var.is_hns_enabled
-  tags                            = var.tags
+  name                              = var.storage_account_name
+  resource_group_name               = var.resource_group_name
+  location                          = var.location
+  account_kind                      = var.account_kind
+  account_tier                      = var.account_tier
+  account_replication_type          = var.account_replication_type
+  access_tier                       = var.access_tier
+  https_traffic_only_enabled        = var.https_traffic_only_enabled
+  min_tls_version                   = var.min_tls_version
+  allow_nested_items_to_be_public   = var.allow_nested_items_to_be_public
+  shared_access_key_enabled         = var.shared_access_key_enabled
+  public_network_access_enabled     = var.public_network_access_enabled
+  default_to_oauth_authentication   = var.default_to_oauth_authentication
+  is_hns_enabled                    = var.is_hns_enabled
+  infrastructure_encryption_enabled = var.infrastructure_encryption_enabled
+  tags                              = var.tags
+
+  queue_properties {
+    logging {
+      version               = "1.0"
+      delete                = true
+      read                  = true
+      write                 = true
+      retention_policy_days = 7
+    }
+  }
+
+  network_rules {
+    default_action             = var.network_rules.default_action
+    bypass                     = var.network_rules.bypass
+    ip_rules                   = var.network_rules.ip_rules
+    virtual_network_subnet_ids = var.network_rules.virtual_network_subnet_ids
+  }
 
   dynamic "sas_policy" {
     for_each = var.sas_policy == null ? [] : [var.sas_policy]
@@ -30,6 +48,25 @@ resource "azurerm_storage_account" "this" {
     precondition {
       condition     = var.sas == null || var.shared_access_key_enabled
       error_message = "shared_access_key_enabled must be true when an account SAS token is requested."
+    }
+
+    precondition {
+      condition = var.account_tier == "Standard" && contains(
+        ["Storage", "StorageV2"],
+        var.account_kind
+      )
+      error_message = "Storage account logging requires account_tier Standard and account_kind Storage or StorageV2."
+    }
+
+    precondition {
+      condition = !var.infrastructure_encryption_enabled || (
+        var.account_kind == "StorageV2" ||
+        (
+          var.account_tier == "Premium" &&
+          contains(["BlockBlobStorage", "FileStorage"], var.account_kind)
+        )
+      )
+      error_message = "Infrastructure encryption requires account_kind StorageV2, or a Premium BlockBlobStorage/FileStorage account."
     }
   }
 }

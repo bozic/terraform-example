@@ -49,7 +49,7 @@ variable "account_tier" {
 variable "account_replication_type" {
   description = "The replication type of the storage account."
   type        = string
-  default     = "LRS"
+  default     = "GRS"
 
   validation {
     condition     = contains(["LRS", "GRS", "RAGRS", "ZRS", "GZRS", "RAGZRS"], var.account_replication_type)
@@ -113,6 +113,36 @@ variable "is_hns_enabled" {
   description = "Whether Hierarchical Namespace is enabled."
   type        = bool
   default     = false
+}
+
+variable "infrastructure_encryption_enabled" {
+  description = "Whether to enable an additional infrastructure encryption layer."
+  type        = bool
+  default     = true
+}
+
+variable "network_rules" {
+  description = "Network access rules for the storage account. Secure defaults deny public traffic."
+  type = object({
+    default_action             = optional(string, "Deny")
+    bypass                     = optional(set(string), ["AzureServices"])
+    ip_rules                   = optional(set(string), [])
+    virtual_network_subnet_ids = optional(set(string), [])
+  })
+  default = {}
+
+  validation {
+    condition     = contains(["Allow", "Deny"], var.network_rules.default_action)
+    error_message = "network_rules.default_action must be Allow or Deny."
+  }
+
+  validation {
+    condition = alltrue([
+      for bypass in var.network_rules.bypass :
+      contains(["Logging", "Metrics", "AzureServices", "None"], bypass)
+    ])
+    error_message = "network_rules.bypass entries must be Logging, Metrics, AzureServices, or None."
+  }
 }
 
 variable "tags" {

@@ -14,3 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Zero-to-many blob container support.
 - Sensitive access key, connection string, and optional account SAS outputs.
 - Optional SAS expiration policy and RBAC role assignments.
+
+### Changed
+
+- Secure storage defaults now enable infrastructure encryption, geo-redundant replication,
+  storage analytics logging, and deny-by-default network rules.

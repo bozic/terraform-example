@@ -12,6 +12,11 @@ module "storage_account" {
   resource_group_name  = "example-resources"
   location             = "westeurope"
 
+  network_rules = {
+    default_action = "Deny"
+    bypass         = ["AzureServices"]
+  }
+
   containers = {
     private = {}
     public = {
