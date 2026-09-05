@@ -43,7 +43,6 @@ output "containers" {
       id                  = v.id
       name                = v.name
       resource_manager_id = v.resource_manager_id
-      url                 = v.url
     }
   }
 }
