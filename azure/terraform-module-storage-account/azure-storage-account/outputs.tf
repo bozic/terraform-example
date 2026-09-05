@@ -69,9 +69,20 @@ output "container_ids" {
   value       = { for name, container in azurerm_storage_container.this : name => container.resource_manager_id }
 }
 
+output "containers" {
+  description = "The created containers, keyed by container name."
+  value = {
+    for name, container in azurerm_storage_container.this : name => {
+      id   = container.resource_manager_id
+      name = container.name
+      url  = format("%s/%s", trimsuffix(local.primary_blob_endpoint, "/"), container.name)
+    }
+  }
+}
+
 output "container_urls" {
   description = "The data plane URLs of the created containers, keyed by container name."
-  value       = { for name, container in azurerm_storage_container.this : name => container.url }
+  value       = { for name, container in azurerm_storage_container.this : name => format("%s/%s", trimsuffix(local.primary_blob_endpoint, "/"), container.name) }
 }
 
 output "sas" {

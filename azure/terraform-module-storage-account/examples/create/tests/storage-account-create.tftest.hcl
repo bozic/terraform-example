@@ -16,6 +16,11 @@ run "apply" {
   }
 
   assert {
+    condition     = can(regex("/uploads$", module.storage_account.containers["uploads"].url))
+    error_message = "The uploads container URL must use the Storage Account blob endpoint."
+  }
+
+  assert {
     condition     = can(regex("^https://", module.storage_account.primary_blob_endpoint))
     error_message = "The primary blob endpoint must be an HTTPS URL."
   }

@@ -18,3 +18,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Set the Storage Account network rules default action to `Deny`, allowing only trusted Azure services by default.
+- Build container URLs from the Storage Account blob endpoint instead of the unsupported container `url` attribute.
