@@ -80,30 +80,21 @@ variable "is_hns_enabled" {
 }
 
 variable "network_rules" {
-  description = "A `network_rules` block to restrict network access to the Storage Account."
+  description = "A `network_rules` block to restrict network access to the Storage Account. Defaults to denying public network access except for trusted Azure services; set `ip_rules` and/or `virtual_network_subnet_ids` to allow specific networks, or set `default_action = \"Allow\"` to permit all traffic."
   type = object({
     default_action             = string
     bypass                     = optional(list(string))
     ip_rules                   = optional(list(string))
     virtual_network_subnet_ids = optional(list(string))
   })
-  default = null
+  default = {
+    default_action = "Deny"
+    bypass         = ["AzureServices"]
+  }
 
   validation {
     condition     = var.network_rules == null || contains(["Allow", "Deny"], var.network_rules.default_action)
     error_message = "network_rules.default_action must be either 'Allow' or 'Deny'."
-  }
-
-  validation {
-    condition = (
-      var.network_rules == null ||
-      var.network_rules.default_action != "Deny" ||
-      (
-        length(coalesce(var.network_rules.ip_rules, [])) > 0 ||
-        length(coalesce(var.network_rules.virtual_network_subnet_ids, [])) > 0
-      )
-    )
-    error_message = "When network_rules.default_action is 'Deny', at least one of ip_rules or virtual_network_subnet_ids must be specified."
   }
 }
 
