@@ -76,5 +76,7 @@ module "storage_account" {
 
 Set `scope` to a container name to assign a role to that container instead of the whole Storage Account. The `sas`, access key, and connection string outputs are marked sensitive. When querying an existing account, set `storage_account_create = false` and provide its `resource_group_name`.
 
+Storage Accounts created by this module deny public network traffic by default and allow trusted Azure services through the network rules.
+
 <!-- BEGIN_TF_DOCS -->
 <!-- END_TF_DOCS -->

@@ -16,6 +16,13 @@ resource "azurerm_storage_account" "this" {
   default_to_oauth_authentication = var.default_to_oauth_authentication
   is_hns_enabled                  = var.is_hns_enabled
   tags                            = var.tags
+
+  network_rules {
+    default_action             = "Deny"
+    bypass                     = ["AzureServices"]
+    ip_rules                   = []
+    virtual_network_subnet_ids = []
+  }
 }
 
 data "azurerm_storage_account" "this" {

@@ -14,3 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sensitive primary and secondary access key and connection string outputs.
 - Optional account SAS token generation.
 - Optional account- and container-scoped RBAC role assignments.
+
+### Fixed
+
+- Set the Storage Account network rules default action to `Deny`, allowing only trusted Azure services by default.
