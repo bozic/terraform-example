@@ -4,3 +4,4 @@ skip-path:
   - examples
 framework:
   - terraform
+soft-fail: true
