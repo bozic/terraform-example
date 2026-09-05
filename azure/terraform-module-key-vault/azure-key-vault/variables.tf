@@ -83,23 +83,17 @@ variable "soft_delete_retention_days" {
 }
 
 variable "network_acls" {
-  description = "Optional network ACL configuration for the Key Vault."
+  description = "Network ACL configuration for the Key Vault. Unmatched traffic is always denied."
   type = object({
-    bypass                     = string
-    default_action             = string
+    bypass                     = optional(string, "AzureServices")
     ip_rules                   = optional(list(string), [])
     virtual_network_subnet_ids = optional(list(string), [])
   })
-  default = null
+  default = {}
 
   validation {
-    condition     = var.network_acls == null || contains(["AzureServices", "None"], var.network_acls.bypass)
+    condition     = contains(["AzureServices", "None"], var.network_acls.bypass)
     error_message = "network_acls.bypass must be either AzureServices or None."
-  }
-
-  validation {
-    condition     = var.network_acls == null || contains(["Allow", "Deny"], var.network_acls.default_action)
-    error_message = "network_acls.default_action must be either Allow or Deny."
   }
 }
 

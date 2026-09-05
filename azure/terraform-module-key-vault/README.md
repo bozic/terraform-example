@@ -18,5 +18,8 @@ module "key_vault" {
 
 Set `key_vault_create = false` to query an existing Key Vault instead of creating one.
 
+The module configures network ACLs to deny unmatched traffic. Use `network_acls` to set permitted IP
+addresses, virtual network subnets, or the Azure services bypass setting.
+
 <!-- BEGIN_TF_DOCS -->
 <!-- END_TF_DOCS -->

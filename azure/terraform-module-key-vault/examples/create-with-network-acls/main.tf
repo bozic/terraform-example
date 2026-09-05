@@ -20,9 +20,8 @@ module "key_vault" {
   tenant_id           = data.azurerm_client_config.current.tenant_id
 
   network_acls = {
-    bypass         = "AzureServices"
-    default_action = "Deny"
-    ip_rules       = []
+    bypass   = "AzureServices"
+    ip_rules = []
   }
 
   tags = {
